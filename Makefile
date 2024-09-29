@@ -12,10 +12,7 @@ PIP = $(VENV_DIR)/bin/pip
 
 # install 目标：创建虚拟环境并安装依赖
 install: $(VENV_DIR)/bin/python
-	@echo "升级 pip..."
-	$(PYTHON) -m pip install --upgrade pip
-	@echo "安装依赖包..."
-	$(PYTHON) -m pip install -r requirements.txt
+	$(PYTHON) -m install numpy matplotlib flask
 	@echo "依赖包安装完成。"
 
 # 规则：如果虚拟环境的 Python 不存在，则创建虚拟环境
