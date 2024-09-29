@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>K-Means Clustering</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: inline-block;
+            width: 200px;
+            font-weight: bold;
+        }
+        input[type="number"], select {
+            width: 200px;
+            padding: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .message {
+            margin-top: 20px;
+            color: green;
+        }
+        .plot {
+            margin-top: 30px;
+        }
+    </style>
+    <!-- 引入 Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>K-Means Clustering</h1>
+        <form method="POST" id="kmeans-form">
+            <div class="form-group">
+                <label for="K">Number of Clusters (K):</label>
+                <input type="number" id="K" name="K" value="{{ K }}" min="1" max="10" required>
+            </div>
+            <div class="form-group">
+                <label for="init_method">Initialization Method:</label>
+                <select id="init_method" name="init_method" onchange="toggleManualSelection()">
+                    <option value="random" {% if init_method == 'random' %}selected{% endif %}>Random</option>
+                    <option value="farthest_first" {% if init_method == 'farthest_first' %}selected{% endif %}>Farthest First</option>
+                    <option value="kmeans++" {% if init_method == 'kmeans++' %}selected{% endif %}>K-Means++</option>
+                    <option value="manual" {% if init_method == 'manual' %}selected{% endif %}>Manual Selection</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="num_points">Number of Data Points:</label>
+                <input type="number" id="num_points" name="num_points" value="{{ num_points if num_points else 500 }}" min="1" max="10000" required>
+            </div>
+            <div class="form-group">
+                <label for="random_state">Random State (Optional):</label>
+                <input type="number" id="random_state" name="random_state" value="{{ random_state if random_state else '' }}">
+            </div>
+            <div class="form-group">
+                <button type="submit" name="action" value="generate">Generate Data & Initialize Centroids</button>
+                <button type="submit" name="action" value="iterate_once">Iterate Once</button>
+                <button type="submit" name="action" value="iterate_until">Iterate Until Convergence</button>
+                <button type="submit" name="action" value="reset">Reset Centroids</button>
+            </div>
+        </form>
+        {% if message %}
+            <div class="message">{{ message }}</div>
+        {% endif %}
+        {% if plot_url %}
+            <div class="plot">
+                <h2>Clustering Result</h2>
+                <img src="data:image/png;base64,{{ plot_url }}" alt="K-Means Clustering Plot">
+            </div>
+        {% endif %}
+        {% if init_method == 'manual' and coordinates %}
+            <div class="plot">
+                <h2>Click on the Plot to Select Initial Centroids</h2>
+                <div id="plotly-plot" style="width:100%;height:600px;"></div>
+                <button onclick="submitManualCentroids()">Submit Centroids</button>
+                <div id="selection-message" style="color: blue; margin-top: 10px;"></div>
+            </div>
+            <script>
+                let selectedCentroids = [];
+                const K = {{ K }};
+                const data = {{ coordinates | tojson }};
+                const initialCentroids = {{ centroids | tojson }};
+
+                const tracePoints = {
+                    x: data.map(point => point[0]),
+                    y: data.map(point => point[1]),
+                    mode: 'markers',
+                    type: 'scatter',
+                    name: 'Data Points',
+                    marker: { color: 'blue', size: 6 }
+                };
+
+                const traceCentroids = {
+                    x: initialCentroids.map(point => point[0]),
+                    y: initialCentroids.map(point => point[1]),
+                    mode: 'markers',
+                    type: 'scatter',
+                    name: 'Initial Centroids',
+                    marker: { color: 'red', size: 12, symbol: 'x' }
+                };
+
+                const layout = {
+                    title: 'Click on the Plot to Select Initial Centroids',
+                    dragmode: 'select',
+                    showlegend: true
+                };
+
+                // 绘制数据点和现有聚类中心（如果有）
+                const traces = [tracePoints];
+                if (initialCentroids.length > 0) {
+                    traces.push(traceCentroids);
+                }
+
+                Plotly.newPlot('plotly-plot', traces, layout);
+
+                document.getElementById('plotly-plot').on('plotly_click', function(data){
+                    if (selectedCentroids.length >= K) {
+                        alert(`You have already selected ${K} centroids.`);
+                        return;
+                    }
+                    const x = data.points[0].x;
+                    const y = data.points[0].y;
+                    selectedCentroids.push([x, y]);
+
+                    // 在图上绘制选择的中心点
+                    Plotly.addTraces('plotly-plot', {
+                        x: [x],
+                        y: [y],
+                        mode: 'markers',
+                        type: 'scatter',
+                        name: `Selected Centroid ${selectedCentroids.length}`,
+                        marker: { color: 'green', size: 12, symbol: 'circle' }
+                    });
+
+                    document.getElementById('selection-message').innerText = `Selected ${selectedCentroids.length} of ${K} centroids.`;
+                });
+
+                function submitManualCentroids(){
+                    if (selectedCentroids.length !== K) {
+                        alert(`Please select exactly ${K} centroids.`);
+                        return;
+                    }
+                    console.log('Submitting centroids:', selectedCentroids); // 调试用
+                    fetch('/a', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ centroids: selectedCentroids })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'success'){
+                            alert(data.message);
+                            // 重新加载页面以显示更新后的聚类结果
+                            window.location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while submitting centroids.');
+                    });
+                }
+
+                function toggleManualSelection(){
+                    const initMethod = document.getElementById('init_method').value;
+                    if(initMethod === 'manual'){
+                        // 可在这里添加更多逻辑
+                    }
+                }
+            </script>
+        {% endif %}
+    </div>
+</body>
+</html>
