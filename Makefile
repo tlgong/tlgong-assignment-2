@@ -23,7 +23,12 @@ $(VENV_DIR)/bin/python:
 	@echo "创建虚拟环境..."
 	python3 -m venv $(VENV_DIR)
 	@echo "虚拟环境创建完成。"
-
+lint:
+	@echo "运行 flake8 进行代码检查..."
+	$(PYTHON) -m pip install flake8
+	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=$(VENV_DIR)/*
+	flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=$(VENV_DIR)/*
+	@echo "代码检查完成
 # run 目标：运行 Flask 应用
 run:
 	@echo "启动 Flask 应用..."
