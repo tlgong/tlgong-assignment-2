@@ -29,4 +29,5 @@ lint:
 # run 目标：运行 Flask 应用
 run:
 	@echo "启动 Flask 应用..."
+	python3 app.py
 	python app.py
