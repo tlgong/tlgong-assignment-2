@@ -5,16 +5,6 @@ import base64
 
 class KMeans:
     def __init__(self, K, init_method='random', tolerance=1e-8, max_iterations=300, random_state=None):
-        """
-        初始化 KMeans 类。
-
-        参数：
-        - K: 聚类的数量
-        - init_method: 初始化方法，'random', 'farthest_first', 'kmeans++', 'manual'
-        - tolerance: 收敛的容忍度
-        - max_iterations: 最大迭代次数
-        - random_state: 随机种子，用于可重复性
-        """
         self.K = K
         self.init_method = init_method
         self.tolerance = tolerance
@@ -25,7 +15,7 @@ class KMeans:
         self.labels = None
         self.history = []
         self.coordinates = None
-        self.manual_centroids = None  # 用于存储手动选择的中心点
+        self.manual_centroids = None
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
@@ -33,15 +23,6 @@ class KMeans:
         self.K = k
 
     def generate_dataset(self, num=500):
-        """
-        生成数据集。
-
-        参数：
-        - num: 数据点数量
-
-        返回：
-        - coordinates: NumPy 数组，形状为 (num, 2)
-        """
         print(self)
         x = np.random.uniform(-10, 10, size=num)
         y = np.random.uniform(-10, 10, size=num)
@@ -145,7 +126,7 @@ class KMeans:
     def get_plot_image(self, iteration):
         plt.figure(figsize=(8, 6))
         if self.centroids is not None:
-            print(f"Plotting centroids: {self.centroids}")  # 调试信息
+            print(f"Plotting centroids: {self.centroids}")
             K = self.centroids.shape[0]
             colors = plt.cm.get_cmap('viridis', K)
             for k in range(K):
@@ -158,7 +139,7 @@ class KMeans:
             plt.title(f'K-Means Clustering - Iteration {iteration}')
             plt.legend()
         else:
-            print("Centroids not initialized. Plotting only data points.")  # 调试信息
+            print("Centroids not initialized. Plotting only data points.")
             plt.scatter(self.coordinates[:, 0], self.coordinates[:, 1],
                         s=30, color='blue', label='Data Points')
             plt.title(f'K-Means Clustering - Iteration {iteration}')
@@ -225,18 +206,12 @@ class KMeans:
                 return plot_url
 
     def set_manual_centroids(self, centroids):
-        """
-        设置手动选择的中心点。
-
-        参数：
-        - centroids: List 或 NumPy 数组，包含用户选择的中心点坐标，形状为 (K, 2)
-        """
         print(self)
         self.manual_centroids = centroids
         self.centroids = self.initialize_centroids_manual(centroids)
-        # 重新计算标签
+
         distances = np.linalg.norm(self.coordinates[:, np.newaxis, :] - self.centroids[np.newaxis, :, :], axis=2)
         self.labels = np.argmin(distances, axis=1)
-        # 更新历史记录
+
         self.history = [self.centroids.copy()]
-        print(f"Set centroids: {self.centroids}")  # 调试信息
+        print(f"Set centroids: {self.centroids}")
