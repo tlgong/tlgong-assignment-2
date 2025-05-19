@@ -36,7 +36,6 @@
             margin-top: 30px;
         }
     </style>
-    <!-- 引入 Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
@@ -117,7 +116,7 @@
                     showlegend: true
                 };
 
-                // 绘制数据点和现有聚类中心（如果有）
+
                 const traces = [tracePoints];
                 if (initialCentroids.length > 0) {
                     traces.push(traceCentroids);
@@ -134,7 +133,7 @@
                     const y = data.points[0].y;
                     selectedCentroids.push([x, y]);
 
-                    // 在图上绘制选择的中心点
+
                     Plotly.addTraces('plotly-plot', {
                         x: [x],
                         y: [y],
@@ -152,7 +151,7 @@
                         alert(`Please select exactly ${K} centroids.`);
                         return;
                     }
-                    console.log('Submitting centroids:', selectedCentroids); // 调试用
+                    console.log('Submitting centroids:', selectedCentroids);
                     fetch('/a', {
                         method: 'POST',
                         headers: {
@@ -164,7 +163,7 @@
                     .then(data => {
                         if(data.status === 'success'){
                             alert(data.message);
-                            // 重新加载页面以显示更新后的聚类结果
+
                             window.location.reload();
                         } else {
                             alert(data.message);
@@ -179,7 +178,6 @@
                 function toggleManualSelection(){
                     const initMethod = document.getElementById('init_method').value;
                     if(initMethod === 'manual'){
-                        // 可在这里添加更多逻辑
                     }
                 }
             </script>
